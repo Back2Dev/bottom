@@ -1,15 +1,19 @@
-# Puck Demo - fully featured
+# Puck Demo - Standalone
 
 This demo is for the Puck editor. See https://github.com/puckeditor/puck
 
 It is a fully featured block editor.
 
-This demo is based on the `next` recipe, but it includes a number of components to make it look like a real app rather than an empty shell.
+This demo is extracted from the Puck repo in /apps/demo. That code is woven into the whole repository, so it's not a good starting point for a project. I asked ChatGPT to extract it as a standalone app, and it did a good job of that.
+
+## Why is it called Bottom?
+
+Nick Bottom is a character in Shakespeare's A Midsummer Night's Dream who provides comic relief throughout the play. A weaver by trade, he is famously known for getting his head transformed into that of a donkey by the elusive Puck.
 
 ## Demonstrates
 
 - Next.js 13 App Router implementation
-- JSON database implementation with HTTP API
+- Server side database in mongodb or JSON file
 - Catch-all routes to use puck for any route on the platform
 
 ## Usage
