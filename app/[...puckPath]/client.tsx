@@ -6,13 +6,14 @@ import config from "../../config";
 import { useDemoData } from "../../lib/use-demo-data";
 import { useEffect, useState } from "react";
 import { Type } from "lucide-react";
+import { savePageData } from "@/lib/puck-data-client";
 
 export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
   const metadata = {
     example: "Hello, world",
   };
 
-  const { data, resolvedData, key } = useDemoData({
+  const { data, resolvedData } = useDemoData({
     path,
     isEdit,
     metadata,
@@ -35,7 +36,7 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
           config={config}
           data={data}
           onPublish={async (data) => {
-            localStorage.setItem(key, JSON.stringify(data));
+            await savePageData(path, data);
           }}
           plugins={[headingAnalyzer]}
           headerPath={path}

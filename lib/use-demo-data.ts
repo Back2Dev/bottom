@@ -4,6 +4,7 @@ import { initialData } from "../config/initial-data";
 import { Metadata, resolveAllData } from "@measured/puck";
 import { Components, UserData } from "../config/types";
 import { RootProps } from "../config/root";
+import { loadPageData } from "./puck-data-client";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -16,36 +17,58 @@ export const useDemoData = ({
   isEdit: boolean;
   metadata?: Metadata;
 }) => {
-  // unique b64 key that updates each time we add / remove components
-
   const key = `puck-demo:${componentKey}:${path}`;
 
-  const [data] = useState<Partial<UserData>>(() => {
-    if (isBrowser) {
-      const dataStr = localStorage.getItem(key);
+  const [data, setData] = useState<Partial<UserData> | undefined>(
+    initialData[path] || {}
+  );
+  const [resolvedData, setResolvedData] = useState<Partial<UserData> | undefined>(
+    initialData[path] || {}
+  );
 
-      if (dataStr) {
-        return JSON.parse(dataStr);
-      }
+  useEffect(() => {
+    if (!isBrowser) return;
 
-      return initialData[path] || {};
-    }
-  });
+    let cancelled = false;
 
-  // Normally this would happen on the server, but we can't
-  // do that because we're using local storage as a database
-  const [resolvedData, setResolvedData] = useState<Partial<UserData>>(data);
+    loadPageData(path)
+      .then((remote) => {
+        if (cancelled) return;
+        const nextData = remote || initialData[path] || {};
+        setData(nextData);
+        setResolvedData(nextData);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setData(initialData[path] || {});
+        setResolvedData(initialData[path] || {});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [path]);
 
   useEffect(() => {
     if (data && !isEdit) {
+      let cancelled = false;
+
       resolveAllData<Components, RootProps>(data, config, metadata).then(
-        setResolvedData
+        (resolved) => {
+          if (!cancelled) {
+            setResolvedData(resolved);
+          }
+        }
       );
+
+      return () => {
+        cancelled = true;
+      };
     }
   }, [data, isEdit, metadata]);
 
   useEffect(() => {
-    if (!isEdit) {
+    if (!isEdit && data) {
       const title = data?.root?.props?.title || data?.root?.title;
       document.title = title || "";
     }

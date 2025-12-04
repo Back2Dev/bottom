@@ -14,31 +14,43 @@ Nick Bottom is a character in Shakespeare's A Midsummer Night's Dream who provid
 
 ## Demonstrates
 
-- Next.js 13 App Router implementation
+- Next.js 15 App Router implementation
 - Server side database in mongodb or JSON file
 - Catch-all routes to use puck for any route on the platform
 
-## Usage
+## Getting started
 
-Run the generator and enter `next` when prompted
+Install dependencies
 
 ```
-npx create-puck-app my-app
+npm i
+```
+
+Set up database, create a `.env.local` file containing
+
+```
+DATABASE_URI=mongodb://localhost:27017/puck-db
+```
+
+OR
+
+```
+DATABASE_URI=file://./puck-db.json
 ```
 
 Start the server
 
 ```
-yarn dev
+npm run dev
 ```
 
 Navigate to the homepage at https://localhost:3000. To edit the homepage, access the Puck editor at https://localhost:3000/edit.
 
 You can do this for any route on the application, **even if the page doesn't exist**. For example, visit https://localhost:3000/hello/world and you'll receive a 404. You can author and publish a page by visiting https://localhost:3000/hello/world/edit. After publishing, go back to the original URL to see your page.
 
-## Using this recipe
+## Using this demo
 
-To adopt this recipe you will need to:
+To adopt this demo you will need to:
 
 - **IMPORTANT** Add authentication to `/edit` routes. This can be done by modifying the example API routes in `/app/api/puck/route.ts` and server component in `/app/[...puckPath]/page.tsx`. **If you don't do this, Puck will be completely public.**
 - Integrate your database into the API calls in `/app/api/puck/route.ts`
@@ -46,4 +58,4 @@ To adopt this recipe you will need to:
 
 ## License
 
-MIT © [The Puck Contributors](https://github.com/measuredco/puck/graphs/contributors).
+MIT

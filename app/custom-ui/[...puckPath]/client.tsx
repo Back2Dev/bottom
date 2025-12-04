@@ -29,6 +29,7 @@ import {
   Unlock,
   Type,
 } from "lucide-react";
+import { savePageData } from "@/lib/puck-data-client";
 
 const usePuck = createUsePuck<UserConfig>();
 
@@ -231,7 +232,7 @@ const Tabs = ({
   );
 };
 
-const CustomPuck = ({ dataKey }: { dataKey: string }) => {
+const CustomPuck = ({ path }: { path: string }) => {
   const [hoveringTabs, setHoveringTabs] = useState(false);
 
   const [actionBarScroll, setActionBarScroll] = useState(0);
@@ -245,7 +246,7 @@ const CustomPuck = ({ dataKey }: { dataKey: string }) => {
       <div style={{ position: "sticky", top: 0, zIndex: 2 }}>
         <CustomHeader
           onPublish={async (data: Data) => {
-            localStorage.setItem(dataKey, JSON.stringify(data));
+            await savePageData(path, data);
           }}
         />
       </div>
@@ -358,7 +359,7 @@ const CustomDrawer = () => {
 };
 
 export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
-  const { data, resolvedData, key } = useDemoData({
+  const { data, resolvedData } = useDemoData({
     path,
     isEdit,
   });
@@ -503,7 +504,7 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
             );
           },
           drawer: () => <CustomDrawer />,
-          puck: () => <CustomPuck dataKey={key} />,
+          puck: () => <CustomPuck path={path} />,
         }}
       />
     );
