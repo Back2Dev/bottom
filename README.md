@@ -1,6 +1,10 @@
-# `next` recipe
+# Puck Demo - fully featured
 
-The `next` recipe showcases one of the most powerful ways to implement Puck using to provide an authoring tool for any route in your Next app.
+This demo is for the Puck editor. See https://github.com/puckeditor/puck
+
+It is a fully featured block editor.
+
+This demo is based on the `next` recipe, but it includes a number of components to make it look like a real app rather than an empty shell.
 
 ## Demonstrates
 
