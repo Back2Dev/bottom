@@ -2,7 +2,11 @@ import { promises as fs } from "fs";
 import path from "path";
 import { MongoClient, Collection } from "mongodb";
 
-type PageData = any;
+type PageData = {
+  content: any;
+  root: any;
+  zones?: Record<string, any>;
+};
 
 const getDatabaseUri = () => {
   const uri = process.env.DATABASE_URI;
@@ -17,6 +21,15 @@ const getDatabaseUri = () => {
 };
 
 const isFileUri = (uri: string) => uri.startsWith("file://");
+
+const randomId = (length = 17) => {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let id = "";
+  for (let i = 0; i < length; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+};
 
 const ensureFileStorePath = async (uri: string) => {
   const filePath = uri.replace(/^file:\/\//, "");
@@ -52,7 +65,9 @@ const writeFileStore = async (uri: string, data: Record<string, PageData>) => {
 };
 
 let mongoClient: MongoClient | null = null;
-let mongoCollection: Collection<{ path: string; data: PageData }> | null = null;
+let mongoCollection: Collection<
+  { path: string } & PageData & { _id?: string }
+> | null = null;
 
 const getMongoCollection = async (uri: string) => {
   if (mongoCollection) return mongoCollection;
@@ -80,13 +95,45 @@ export const getPageData = async (pagePath: string): Promise<PageData | null> =>
 
   if (isFileUri(uri)) {
     const store = await readFileStore(uri);
-    return store[pagePath] ?? null;
+    const record = store[pagePath];
+    if (!record) return null;
+
+    if ("data" in record && record.data) {
+      // backward compatibility
+      const legacy = record.data as any;
+      return {
+        content: legacy.content,
+        root: legacy.root,
+        zones: legacy.zones,
+      };
+    }
+
+    return {
+      content: record.content,
+      root: record.root,
+      zones: record.zones,
+    };
   }
 
   const collection = await getMongoCollection(uri);
   const doc = await collection.findOne({ path: pagePath });
 
-  return doc?.data ?? null;
+  if (!doc) return null;
+
+  if ("data" in (doc as any)) {
+    const legacy = (doc as any).data as any;
+    return {
+      content: legacy?.content,
+      root: legacy?.root,
+      zones: legacy?.zones,
+    };
+  }
+
+  return {
+    content: doc.content,
+    root: doc.root,
+    zones: doc.zones,
+  };
 };
 
 export const savePageData = async (
@@ -95,9 +142,15 @@ export const savePageData = async (
 ): Promise<void> => {
   const uri = getDatabaseUri();
 
+  const prepared: PageData = {
+    content: data.content,
+    root: data.root,
+    zones: data.zones,
+  };
+
   if (isFileUri(uri)) {
     const store = await readFileStore(uri);
-    store[pagePath] = data;
+    store[pagePath] = prepared;
     await writeFileStore(uri, store);
     return;
   }
@@ -105,7 +158,15 @@ export const savePageData = async (
   const collection = await getMongoCollection(uri);
   await collection.updateOne(
     { path: pagePath },
-    { $set: { data } },
+    {
+      $set: {
+        path: pagePath,
+        content: prepared.content,
+        root: prepared.root,
+        zones: prepared.zones,
+      },
+      $setOnInsert: { _id: randomId(), path: pagePath },
+    },
     { upsert: true }
   );
 };

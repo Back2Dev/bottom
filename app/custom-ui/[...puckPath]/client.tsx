@@ -526,7 +526,7 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
     >
       <div>
         <h1>404</h1>
-        <p>Page does not exist in session storage</p>
+        <p>Page was not found in persistent storage</p>
       </div>
     </div>
   );
