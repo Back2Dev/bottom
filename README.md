@@ -10,6 +10,8 @@ This demo is extracted from the Puck repo in /apps/demo. That code is woven into
 
 Nick Bottom is a character in Shakespeare's A Midsummer Night's Dream who provides comic relief throughout the play. A weaver by trade, he is famously known for getting his head transformed into that of a donkey by the elusive Puck.
 
+<img width="284" height="200" alt="image" src="https://github.com/user-attachments/assets/46b8f9f5-9cbd-4c5d-a4b0-1f06f716ce74" />
+
 ## Demonstrates
 
 - Next.js 13 App Router implementation
