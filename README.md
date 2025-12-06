@@ -4,7 +4,11 @@ This demo is for the Puck editor. See https://github.com/puckeditor/puck
 
 It is a fully featured block editor.
 
-This demo is extracted from the Puck repo in /apps/demo. That code is woven into the whole repository, so it's not a good starting point for a project. I asked ChatGPT to extract it as a standalone app, and it did a good job of that.
+This demo is extracted from the Puck repo in /apps/demo. 
+
+Why did I do that? I wanted a quick app that I could get running in a moment, rather than having construct everything from scratch. The recipes in the Puck repo work, but it's a low starting base.
+
+The demo code is woven into the whole repository, so it's not a good starting point for a project. I asked ChatGPT to extract it as a standalone app, and it did a good job of that.
 
 ## Why is it called Bottom?
 
