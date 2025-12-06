@@ -3,6 +3,15 @@ import { NextResponse } from "next/server";
 import { initialData } from "@/config/initial-data";
 import { getPageData, savePageData } from "@/lib/server/storage";
 
+const normalizePath = (p: string) => {
+  if (!p) return "/";
+  const withSlash = p.startsWith("/") ? p : `/${p}`;
+  if (withSlash.length > 1 && withSlash.endsWith("/")) {
+    return withSlash.slice(0, -1);
+  }
+  return withSlash;
+};
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const path = searchParams.get("path");
@@ -14,14 +23,16 @@ export async function GET(request: Request) {
     );
   }
 
-  const stored = await getPageData(path);
+  const normalized = normalizePath(path);
+
+  const stored = await getPageData(normalized);
 
   if (stored) {
     return NextResponse.json(stored);
   }
 
-  if (initialData[path as keyof typeof initialData]) {
-    return NextResponse.json(initialData[path as keyof typeof initialData]);
+  if (initialData[normalized as keyof typeof initialData]) {
+    return NextResponse.json(initialData[normalized as keyof typeof initialData]);
   }
 
   return NextResponse.json(null, { status: 404 });
@@ -29,7 +40,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const path = body?.path as string | undefined;
+  const path = normalizePath(body?.path as string | undefined);
   const data = body?.data;
 
   if (!path || typeof data === "undefined") {

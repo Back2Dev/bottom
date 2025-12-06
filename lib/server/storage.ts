@@ -8,14 +8,19 @@ type PageData = {
   zones?: Record<string, any>;
 };
 
-const getDatabaseUri = () => {
-  const uri = process.env.DATABASE_URI;
-
-  if (!uri) {
-    throw new Error(
-      "DATABASE_URI is not set. Provide a file:// or mongodb:// URI in .env.local."
-    );
+const normalizePath = (p: string) => {
+  const withSlash = p.startsWith("/") ? p : `/${p}`;
+  if (withSlash.length > 1 && withSlash.endsWith("/")) {
+    return withSlash.slice(0, -1);
   }
+  return withSlash || "/";
+};
+
+const getDatabaseUri = () => {
+  const uri =
+    process.env.DATABASE_URI && process.env.DATABASE_URI.trim().length > 0
+      ? process.env.DATABASE_URI
+      : "file://./puck-db.json";
 
   return uri;
 };
@@ -92,48 +97,92 @@ const getMongoCollection = async (uri: string) => {
 
 export const getPageData = async (pagePath: string): Promise<PageData | null> => {
   const uri = getDatabaseUri();
+  const normalizedPath = normalizePath(pagePath);
 
   if (isFileUri(uri)) {
     const store = await readFileStore(uri);
-    const record = store[pagePath];
-    if (!record) return null;
 
-    if ("data" in record && record.data) {
-      // backward compatibility
-      const legacy = record.data as any;
-      return {
-        content: legacy.content,
-        root: legacy.root,
-        zones: legacy.zones,
-      };
+    let existingKey = normalizedPath;
+
+    if (!store[normalizedPath]) {
+      const match = Object.keys(store).find(
+        (k) => normalizePath(k) === normalizedPath
+      );
+      if (match) {
+        existingKey = match;
+      }
     }
 
-    return {
-      content: record.content,
-      root: record.root,
-      zones: record.zones,
-    };
+    const record = store[existingKey];
+    if (!record) return null;
+
+    let migrated = false;
+    let value: PageData = record as any;
+
+    if ("data" in record && (record as any).data) {
+      const legacy = (record as any).data as any;
+      value = {
+        content: legacy?.content,
+        root: legacy?.root,
+        zones: legacy?.zones,
+      };
+      migrated = true;
+    }
+
+    if (existingKey !== normalizedPath) {
+      delete store[existingKey];
+      store[normalizedPath] = value;
+      migrated = true;
+    }
+
+    if (migrated) {
+      await writeFileStore(uri, store);
+    }
+
+    return value;
   }
 
   const collection = await getMongoCollection(uri);
-  const doc = await collection.findOne({ path: pagePath });
+  const doc =
+    (await collection.findOne({ path: normalizedPath })) ||
+    (await collection.findOne({ path: normalizePath(normalizedPath) })) ||
+    (await collection.findOne({ path: normalizedPath.slice(1) }));
 
   if (!doc) return null;
 
+  let migrated = false;
+  let value: PageData = {
+    content: (doc as any).content,
+    root: (doc as any).root,
+    zones: (doc as any).zones,
+  };
+
   if ("data" in (doc as any)) {
     const legacy = (doc as any).data as any;
-    return {
+    value = {
       content: legacy?.content,
       root: legacy?.root,
       zones: legacy?.zones,
     };
+    migrated = true;
   }
 
-  return {
-    content: doc.content,
-    root: doc.root,
-    zones: doc.zones,
-  };
+  if (doc.path !== normalizedPath || migrated) {
+    await collection.updateOne(
+      { _id: (doc as any)._id },
+      {
+        $set: {
+          path: normalizedPath,
+          content: value.content,
+          root: value.root,
+          zones: value.zones,
+        },
+        $unset: { data: "" },
+      }
+    );
+  }
+
+  return value;
 };
 
 export const savePageData = async (
@@ -141,6 +190,7 @@ export const savePageData = async (
   data: PageData
 ): Promise<void> => {
   const uri = getDatabaseUri();
+  const normalizedPath = normalizePath(pagePath);
 
   const prepared: PageData = {
     content: data.content,
@@ -150,22 +200,22 @@ export const savePageData = async (
 
   if (isFileUri(uri)) {
     const store = await readFileStore(uri);
-    store[pagePath] = prepared;
+    store[normalizedPath] = prepared;
     await writeFileStore(uri, store);
     return;
   }
 
   const collection = await getMongoCollection(uri);
   await collection.updateOne(
-    { path: pagePath },
+    { path: normalizedPath },
     {
       $set: {
-        path: pagePath,
+        path: normalizedPath,
         content: prepared.content,
         root: prepared.root,
         zones: prepared.zones,
       },
-      $setOnInsert: { _id: randomId(), path: pagePath },
+      $setOnInsert: { _id: randomId() },
     },
     { upsert: true }
   );

@@ -13,7 +13,7 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
     example: "Hello, world",
   };
 
-  const { data, resolvedData } = useDemoData({
+  const { data, resolvedData, isLoading } = useDemoData({
     path,
     isEdit,
     metadata,
@@ -30,6 +30,8 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
   const params = new URL(window.location.href).searchParams;
 
   if (isEdit) {
+    if (isLoading) return null;
+
     return (
       <div>
         <Puck
@@ -81,7 +83,11 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
     );
   }
 
-  if (data.content) {
+  if (isLoading) {
+    return null;
+  }
+
+  if (data?.content) {
     return <Render config={config} data={resolvedData} metadata={metadata} />;
   }
 

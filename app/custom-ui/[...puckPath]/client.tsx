@@ -359,7 +359,7 @@ const CustomDrawer = () => {
 };
 
 export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
-  const { data, resolvedData } = useDemoData({
+  const { data, resolvedData, isLoading } = useDemoData({
     path,
     isEdit,
   });
@@ -403,6 +403,8 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
   if (!isClient) return null;
 
   if (isEdit) {
+    if (isLoading) return null;
+
     return (
       <Puck<UserConfig>
         config={configOverride}
@@ -509,6 +511,8 @@ export function Client({ path, isEdit }: { path: string; isEdit: boolean }) {
       />
     );
   }
+
+  if (isLoading) return null;
 
   if (data) {
     return <Render<UserConfig> config={config} data={resolvedData} />;
